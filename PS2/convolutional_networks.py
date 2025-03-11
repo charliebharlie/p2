@@ -584,7 +584,7 @@ class DeepConvNet(object):
             if self.batchnorm:
                 gamma = self.params['gamma' + str(i)]
                 beta = self.params['beta' + str(i)]
-                out, bn_cache = SpatialBatchNorm.foward(out, gamma, beta, self.bn_params[i-1])
+                out, bn_cache = SpatialBatchNorm.forward(out, gamma, beta, self.bn_params[i-1])
                 cache['bn' + str(i)] = bn_cache
             
             # ReLU activation
@@ -860,7 +860,8 @@ class BatchNorm(object):
             ##################################################################
             # Replace "pass" statement with your code
             channel_mean = x.mean(dim=0)
-            channel_var = x.var(dim=0)
+            # channel_var = x.var(dim=0)
+            channel_var = ((x - channel_mean) ** 2).mean(dim=0)
             x_hat = (x - channel_mean) / torch.sqrt(channel_var + eps)
             out = gamma * x_hat + beta
             
@@ -948,7 +949,7 @@ class BatchNorm(object):
         
         # Final derivative with respect to x
         dx = dx_hat / torch.sqrt(var + eps) + dvar * 2 * (x - mean) / N + dmean / N
-        
+
         return dx, dgamma, dbeta
 
 
@@ -992,7 +993,10 @@ class SpatialBatchNorm(object):
         # ours is less than five lines.                                #
         ################################################################
         # Replace "pass" statement with your code
-        pass
+        N, C, H, W = x.shape
+        x, cache = BatchNorm.forward(x.permute(0, 2, 3, 1).reshape(-1, x.shape[1]), gamma, beta, bn_param)
+        out = x.reshape(N, H, W, C).permute(0, 3, 1, 2)
+        
         ################################################################
         #                       END OF YOUR CODE                       #
         ################################################################
@@ -1023,7 +1027,10 @@ class SpatialBatchNorm(object):
         # ours is less than five lines.                                 #
         #################################################################
         # Replace "pass" statement with your code
-        pass
+        N, C, H, W = dout.shape
+        dx, dgamma, dbeta = BatchNorm.backward(dout.permute(0, 2, 3, 1).reshape(-1, dout.shape[1]), cache)
+        dx = dx.reshape(N, H, W, C).permute(0, 3, 1, 2)
+        
         ##################################################################
         #                       END OF YOUR CODE                         #
         ##################################################################
